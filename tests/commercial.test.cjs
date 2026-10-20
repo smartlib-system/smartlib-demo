@@ -6,8 +6,8 @@ const vm=require('node:vm');
 const crypto=require('node:crypto');
 const root=path.resolve(__dirname,'..');
 const read=file=>fs.readFileSync(path.join(root,file),'utf8');
-const demo=fs.existsSync(path.join(root,'demo.config.js'));
-function context(config){const c=vm.createContext({window:{SMARTLIB_CONFIG:config},URL,Response,location:{href:'https://demo.example.invalid/'},console,fetch:()=>{throw new Error('External fetch forbidden in test');}});c.window.fetch=c.fetch;return c;}
+const demo=fs.existsSync(path.join(root,'js/demo-data.js'));
+function context(config){const c=vm.createContext({window:{SMARTLIB_CONFIG:config},URL,Response,location:{href:'https://demo.example.invalid/'},console,fetch:()=>{throw new Error('External fetch forbidden in test');}});c.window.fetch=c.fetch;vm.runInContext(read('js/config.js'),c);return c;}
 function files(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.name==='.git'?[]:e.isDirectory()?files(path.join(dir,e.name)):[path.join(dir,e.name)]);}
 
 test('all scripts parse and HTML remains valid UTF-8 with the original copyright',()=>{
@@ -49,21 +49,21 @@ test('assets and manifest remain relative to this deployment',()=>{
 });
 
 test('scaffold cannot connect to a real backend before school mode is explicitly configured',async()=>{
-  const c=context({schoolId:'TEST',schoolName:'Test',mode:'scaffold',backendUrl:'https://script.google.com/macros/s/XXXXX/exec'});
+  const c=context({schoolId:'TEST',schoolName:'Test',appName:'SMARTLib',mode:'scaffold',backendUrl:'https://script.google.com/macros/s/XXXXX/exec'});
   vm.runInContext(read('js/app.js'),c);
   const r=await c.window.smartlibBackendFetch('https://script.google.com/macros/s/XXXXX/exec');assert.equal((await r.json()).ok,false);
 });
 
 test('school transport refuses a different backend',async()=>{
-  const c=context({schoolId:'TEST',schoolName:'Test',mode:'school',backendUrl:'https://script.google.com/macros/s/TEST_ONLY/exec'});vm.runInContext(read('js/app.js'),c);
+  const c=context({schoolId:'TEST',schoolName:'Test',appName:'SMARTLib',mode:'school',backendUrl:'https://script.google.com/macros/s/TEST_ONLY/exec'});vm.runInContext(read('js/app.js'),c);
   await assert.rejects(()=>c.window.smartlibBackendFetch('https://different.example.invalid/exec'),/sepadan/);
 });
 
 if(demo){
-  function setup(){const c=context();for(const file of ['demo.config.js','js/app.js','js/demo-data.js','js/demo-adapter.js'])vm.runInContext(read(file),c);return async p=>{const r=await c.window.smartlibBackendFetch('https://smartlib.invalid/exec',{method:'POST',body:JSON.stringify(p)});return r.json();};}
+  function setup(){const c=context();for(const file of ['config.js','js/config.js','js/app.js','js/demo-data.js','js/demo-adapter.js'])vm.runInContext(read(file),c);return async p=>{const r=await c.window.smartlibBackendFetch('https://smartlib.invalid/exec',{method:'POST',body:JSON.stringify(p)});return r.json();};}
   test('demo uses only explicitly fictional fixtures, five active copies and no backend',async()=>{
     const call=setup();const r=await call({action:'baca_semua'});assert(r.ok);assert.equal(r.data.stock_stats.jumlah_buku,5);assert.equal(r.data.buku.length,6);assert.deepEqual(r.data.murid.map(m=>m.nama),['Ahmad Demo','Aisyah Demo']);assert.deepEqual(r.data.guru.map(m=>m.nama),['Cikgu Ali','Cikgu Siti']);assert(r.data.tempahan_pss.length);assert(r.data.pelupusan.length);
-    const c=context();vm.runInContext(read('demo.config.js'),c);assert.equal(c.window.SMARTLIB_CONFIG.backendUrl,'');assert.equal(c.window.SMARTLIB_CONFIG.mode,'demo');
+    const c=context();vm.runInContext(read('config.js'),c);assert.equal(c.window.SMARTLIB_CONFIG.backendUrl,'');assert.equal(c.window.SMARTLIB_CONFIG.environment,'demo');
   });
   test('loan and return simulations do not decrease stock, and refresh resets fixtures',async()=>{
     const call=setup();let r=await call({action:'add_loan_fast',data:{buku_id:'1',pengguna_id:'1',jenis_pengguna:'murid',tarikh_pinjam:'2026-10-20',tempoh:14}});assert(r.ok);const id=r.data.id;

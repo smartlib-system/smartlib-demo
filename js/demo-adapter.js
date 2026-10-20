@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  if (window.SMARTLIB_CONFIG.mode !== 'demo' || window.SMARTLIB_CONFIG.backendUrl) throw new Error('Demo must use local fixtures only.');
+  if (window.SMARTLIB_CONFIG.environment !== 'demo' || window.SMARTLIB_CONFIG.backendUrl) throw new Error('Demo must use local fixtures only.');
   const db = window.SMARTLIB_DEMO_SEED();
   const copy = value => JSON.parse(JSON.stringify(value));
   const ok = data => ({ok:true,data:copy(data)});

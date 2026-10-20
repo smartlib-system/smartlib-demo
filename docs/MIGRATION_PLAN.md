@@ -6,6 +6,10 @@ Frontend asal terdiri daripada `index.html` besar dengan CSS, fungsi global dan 
 
 Perubahan setempat ialah membuang URL backend/branding sekolah, membaca config neutral, menambah sempadan transport dalam `js/app.js`, menggunakan aset neutral berlaluan relatif dan mengasingkan nama cache mengikut schoolId. Backend asal tidak dimasukkan.
 
+## Tahap 2: configuration sahaja
+
+Config runtime, validation, branding dan endpoint sudah dipusatkan; manifest template serta generator JSON statik disediakan. Core index kekal monolitik dan CSS tidak diekstrak. Lihat CONFIGURATION.md untuk precedence dan had feature flags.
+
 ## Peringkat seterusnya
 
 1. Bekukan baseline visual/tingkah laku: login, sidebar, dark mode, dashboard, katalog, ahli, pinjam/pulang, pelupusan, tempahan, kad, label, scanner dan cetakan A4.

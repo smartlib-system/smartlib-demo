@@ -1,20 +1,15 @@
-# Setup status — 2026-10-20
+# Status komersial — Tahap 2
 
-- Organization: `smartlib-system`; pemilik yang disahkan semasa setup: `SKPKT` sahaja.
-- Master: private, branch `main` dan `development`, Pages tidak diaktifkan.
-- Demo: fixtures rekaan, diterbitkan secara public hanya selepas audit dan ujian.
-- Pelanggan sebenar: belum dicipta.
-- Backend komersial: belum dimigrasi/dideploy. Tiada Sheet baharu diperlukan untuk demo ini.
-- Baseline source frontend dibaca sahaja daripada versi production yang telah diterbitkan. Sejarah Git production, database dan data sekolah tidak disalin ke repositori baharu.
-- URL backend production dan branding sekolah dibuang daripada baseline komersial. Backend asal yang mempunyai kata laluan permulaan hardcoded tidak dimasukkan.
-- CSS inline asal dibandingkan menggunakan SHA-256; tiada perubahan pada blok tersebut. Copyright dikekalkan.
+Master private dan demo public kini menggunakan runtime config.js masing-masing. Master neutral/backend kosong; demo identity rekaan/backend kosong. Core index/runtime sama, CSS inline asal dan aset rasmi tidak diubah. Tiada customer repository, Apps Script atau Google Sheet dicipta.
 
-## Pengesahan yang dilaksanakan sebelum penerbitan awal
+Configuration fields, branding, endpoint tunggal, environment, validation, error classification, version footer dan manifest template disediakan. Config hilang/invalid dikendalikan dengan mesej yang jelas. README menerangkan policy tracked config selamat dan fail customer yang mesti dikekalkan.
 
-Node checks: 6 master dan 10 demo (syntax script, UTF-8, CSS baseline, konfigurasi, aset, pola secrets, pengasingan backend, fixtures, simulasi pinjam/pulang, cadangan pelupusan dan tempahan).
+Feature flags hanya metadata; navigation enforcement belum dilaksanakan. Authentication/database/business logic tidak ditulis semula. Static-token/legacy boot debt, audit backend komersial dan ujian kamera/peranti sebenar masih perlu kerja berasingan.
 
-Browser smoke test menggunakan Edge headless: 13 paparan modul dibuka, demo admin, carian OPAC awam, pinjaman/pemulangan simulasi, edit cadangan pelupusan, Borang 9, dark mode, mobile dan reset selepas refresh. Tiada page error JavaScript atau request backend dikesan dalam sesi yang diuji.
+## Pengesahan
 
-Ujian ini tidak meliputi backend Google Apps Script sebenar, transaksi sekolah, kamera fizikal atau semua cabang tindakan legacy. Demo mempunyai tindakan yang sengaja tidak disimulasikan; README menyenaraikan hadnya. Status deployment Pages akhir hendaklah disahkan melalui GitHub dan laman yang dihidangkan, bukan berdasarkan kewujudan fail ini.
+Suite Node meliputi syntax/UTF-8/CSS baseline, tiada endpoint production/secrets, fixture safety, config normalization, settings precedence, alias, validation, backend switching, error types dan manifest statik.
 
-Langkah pelanggan pertama diterangkan dalam `ARCHITECTURE.md`; pelan migrasi dalam `MIGRATION_PLAN.md`; update core/config dalam `UPDATE_STRATEGY.md`.
+Browser configuration check menggunakan backend olok-olok yang dipintas sepenuhnya: config-only school/title/logo/endpoint changes, login sedia ada, kad, OPAC dan tempahan awam, settings override, config missing/invalid dan master disconnected. Demo smoke check menggunakan data rekaan bagi 13 paparan, transaksi simulasi, Borang 9, dark/mobile dan refresh reset.
+
+Keputusan sebenar dan deployment akhir dicatat dalam laporan Tahap 2. Fail ini tidak membuktikan semua cabang legacy, backend sebenar, kamera fizikal atau pemasangan native PWA telah diuji. Jangan gunakan demo sebagai bukti bahawa backend komersial sudah production-ready.

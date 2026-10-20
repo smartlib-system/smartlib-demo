@@ -9,6 +9,6 @@ window.SMARTLIB_DEMO_SEED = function () {
     bahan_usang_rosak:[{id:'1',buku_id:'3',no_perolehan:'103',no_panggilan:'800 DEM 3',judul:'Buku Contoh 003',pengarang:'Penulis Demo',tahun:'2020',keadaan_bahan:'Usang',sebab_dicadang:'Contoh semakan bahan demo sahaja',cadangan_pelupusan:'Jualan Sisa',status:'Disyorkan Lupus',tarikh_cadang:day,dicadang_oleh:'Cikgu Siti'}],
     pelupusan:[{id:'1',buku_id:'6',no_perolehan:'106',no_panggilan:'800 DEM 6',judul:'Buku Contoh 006',tarikh_lupus:day,kaedah:'Jualan Sisa',no_rujukan:'DEMO-001',pegawai:'Cikgu Siti',status_pelupusan:'Telah Dilupuskan'}],
     tempahan_pss:[{id:'1',booking_id:'DEMO-001',nama:'Cikgu Ali',nama_penempah:'Cikgu Ali',nama_guru:'Cikgu Ali',guru_id:'1',kategori_penempah:'Guru',email_penempah:'ali@example.invalid',kelas:'Kelas Demo 1',program_aktiviti:'Aktiviti membaca demo',tujuan:'Aktiviti membaca demo',lokasi:'Pusat Sumber Demo',ruang:'Pusat Sumber Demo',tarikh:day,tarikh_mula:day,tarikh_tamat:day,masa_mula:'09:00',masa_tamat:'10:00',status:'Diluluskan',bil_murid:'2'}],
-    settings:[{kunci:'sekolah',nilai:'Sekolah Demonstrasi'},{kunci:'nama_app',nilai:'SMARTLib Demo'},{kunci:'logo_url',nilai:'assets/smartlib-logo-official.png'},{kunci:'ann',nilai:JSON.stringify([{id:1,ttl:'Persekitaran Demo',sub:'Semua data ialah rekaan. Perubahan hilang apabila halaman dimuat semula.',t:day,w:'em'}])}]
+    settings:[{kunci:'ann',nilai:JSON.stringify([{id:1,ttl:'Persekitaran Demo',sub:'Semua data ialah rekaan. Perubahan hilang apabila halaman dimuat semula.',t:day,w:'em'}])}]
   };
 };

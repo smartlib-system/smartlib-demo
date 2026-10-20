@@ -1,5 +1,7 @@
 # School-specific deployment settings: maintain in the school's repository only.
-config.js
+config.local.js
+local-config.*
+service-account*.json
 .env
 .env.*
 !.env.example

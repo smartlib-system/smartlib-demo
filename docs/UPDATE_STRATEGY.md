@@ -1,25 +1,24 @@
 # Strategi update
 
-`development` → ujian → `smartlib-demo` → `main` stabil → release berversi → deployment sekolah yang telah diluluskan.
-
-Untuk setiap release, catat versi/commit, perubahan schema, ujian yang dilaksanakan dan prosedur rollback. Jangan menghasilkan update automatik kepada pelanggan tanpa semakan.
+development → ujian → smartlib-demo → main stabil → release → customer yang telah diluluskan.
 
 ## Sempadan fail
 
-| Core boleh dikemas kini | Khusus sekolah: mesti dikekalkan |
+| Boleh dikemas kini sebagai core | Mesti dikekalkan/disemak khusus sekolah |
 |---|---|
-| index.html (dengan tag konfigurasi deployment dikekalkan) | config.js |
-| js/app.js dan modul core yang telah diluluskan | assets/school-logo.png |
-| css/smartlib.css | school-specific settings dan manifest branding |
-| aset rasmi SMARTLib | URL/ID Apps Script dan Google Sheet sekolah |
+| index.html | config.js |
+| js/config.js, js/app.js dan modul core yang diluluskan | assets/school-logo.png dan aset khusus |
+| CSS dan aset rasmi SMARTLib | manifest.webmanifest dan custom favicon/PWA icons |
+| template manifest dan tools development | backendUrl, schoolId dan settings/database sekolah |
 
-Jangan gunakan `git push --force`, mirror sync, `rsync --delete` atau salin seluruh repository untuk update sekolah. Gunakan allowlist core dan semak diff dahulu. Jangan salin adapter/fixtures/demo.config.js ke pelanggan.
+1. Rekod versi/commit deployment semasa, release notes dan pelan rollback. Simpan backup settings/config/aset dalam ruang sekolah yang dibenarkan.
+2. Semak diff dan gunakan allowlist core sahaja. index.html kini sama; **jangan tukar tag script config**. Tiada search/replace nama atau endpoint diperlukan.
+3. Jangan copy config.js, manifest deployment atau js/demo-*.js daripada master/demo ke customer. Jangan gunakan force push, mirror/delete sync atau overwrite keseluruhan repository.
+4. Bandingkan hash config, logo, ikon dan manifest khusus sebelum/selepas update. Jika schema config berubah, semak dan merge field secara sengaja; jangan overwrite values pelanggan.
+5. Manifest template boleh dikemas kini sebagai tool. Regenerate manifest deployment hanya selepas semakan config/icon sekolah, bukan secara automatik ketika update core biasa.
+6. Uji pada backend ujian sekolah sendiri, kemudian commit biasa, push branch deployment yang betul dan sahkan Pages/commit yang dihidangkan.
+7. Rollback core jika perlu, dengan config/aset/data sekolah dikekalkan. Migrasi schema database ialah kerja berasingan dan tidak boleh reset sheet.
 
-1. Rekod commit deployment semasa; buat backup config dan logo dalam ruang sekolah yang dibenarkan.
-2. Bina artefak release daripada master. Dalam index artefak, tukar script `config.example.js` kepada `config.js`; sahkan hanya satu script config dimuatkan. Jangan menghantar config contoh di tempat config sekolah.
-3. Bandingkan artefak dengan deployment. Salin core allowlist sahaja. Pastikan hash config, logo dan settings sekolah tidak berubah.
-4. Migrasi schema secara append-only hanya jika release memerlukan dan selepas backup/ujian pada backend sekolah sendiri. Jangan reset atau kosongkan sheet.
-5. Jalankan smoke test, commit biasa dan push ke branch deployment sekolah yang betul. Pantau Pages dan sahkan commit yang dihidangkan.
-6. Jika gagal, rollback commit core; kekalkan data/config sekolah dan nilai semula migrasi schema secara berasingan.
+Semasa sync ke demo, salin core yang sama; kekalkan config demo, fixtures, aset neutral dan manifest demo. Jalankan keselamatan config dan browser sebelum publish.
 
-SKPKT production tidak menjadi sasaran strategi ini sehingga ada arahan migrasi berasingan yang nyata.
+Production SKPKT bukan sasaran update ini tanpa arahan berasingan.

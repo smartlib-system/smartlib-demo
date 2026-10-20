@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>SMARTLIB — Pusat Sumber Sekolah</title>
+<title>SMARTLib — Sistem Pengurusan Pusat Sumber</title>
 <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
@@ -14,10 +14,9 @@
 <meta name="apple-mobile-web-app-title" content="SMARTLib">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/smartlib.css">
-<script src="demo.config.js"></script>
+<script src="config.js" onerror="window.SMARTLIB_CONFIG_LOAD_FAILED=true"></script>
+<script src="js/config.js"></script>
 <script src="js/app.js"></script>
-<script src="js/demo-data.js"></script>
-<script src="js/demo-adapter.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -543,11 +542,11 @@ body.dk .smartlib-copyright{color:rgba(209,250,229,.45)}
 // ═══════════════════════════════════════════════
 // KONFIGURASI
 // ═══════════════════════════════════════════════
-const GAS=window.SMARTLIB_CONFIG.backendUrl||'https://smartlib.invalid/exec';
+const GAS=window.SMARTLIB_CONFIG.backendUrl;
 let _tok=null,_me=null,_mR='',_pg='dash',_ch={},_sq=null,_rfT=null,_tmp=[];
 const D={buku:[],murid:[],guru:[],pinjaman:[],pelupusan:[],bahan_usang_rosak:[],tempahan_pss:[],ok:false};
-const DEFAULT_SMARTLIB_LOGO='assets/icon-192.png';
-const AP={nm:window.SMARTLIB_CONFIG.appName,tag:'✦ SISTEM PENGURUSAN PUSAT SUMBER SEKOLAH ✦',em:'📚',logo:window.SMARTLIB_CONFIG.smartlibLogo,sch:window.SMARTLIB_CONFIG.schoolName};
+const DEFAULT_SMARTLIB_LOGO=window.SMARTLIB_CONFIG.assets.smartlibLogo;
+const AP=window.smartlibConfiguration.createBranding();
 let pendingLogoUpload=null;
 const S={denda:.20,maks_hari:14,maks_pinjam:3};
 let _ann=[{id:1,ttl:'Selamat datang ke SMARTLIB',sub:'Sistem dimuatkan berjaya.',t:'Hari ini',w:'em'},{id:2,ttl:'Program Membaca 10 Minit',sub:'Setiap hari 8:00–8:10 pagi.',t:'20 Mei 2026',w:'cy'},{id:3,ttl:'Pulangkan Buku Lewat',sub:'Elak denda — pulangkan sebelum tarikh akhir.',t:'18 Mei 2026',w:'am'}];
@@ -750,7 +749,7 @@ async function api(payload,retry=2){
 }
 async function apiGet(params,retry=2){
   const p={...params};if(_tok)p.sessionToken=_tok;
-  const url=new URL(GAS);Object.entries(p).forEach(([k,v])=>url.searchParams.set(k,v));
+  const url=new URL(GAS||location.href);Object.entries(p).forEach(([k,v])=>url.searchParams.set(k,v));
   const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),12000);
   try{const r=await smartlibBackendFetch(url.toString(),{signal:ctrl.signal});clearTimeout(to);if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
   catch(e){clearTimeout(to);if(retry>0&&(e.name==='AbortError'||e.message.includes('fetch'))){const s=document.getElementById('lo-sub');if(s)s.textContent='Cuba semula... ('+retry+'x lagi)';await delay(3000);return apiGet(params,retry-1)}throw e}
@@ -768,10 +767,8 @@ function prosesD(data){
   if(Array.isArray(data.pelupusan))D.pelupusan=data.pelupusan;
   if(Array.isArray(data.bahan_usang_rosak))D.bahan_usang_rosak=data.bahan_usang_rosak;
   if(Array.isArray(data.tempahan_pss))D.tempahan_pss=data.tempahan_pss.map(normalisasiJulatTempahan);
+  if(Array.isArray(data.settings))window.smartlibConfiguration.applySettings(data.settings,AP);
   if(Array.isArray(data.settings))data.settings.forEach(r=>{
-    if(r.kunci==='sekolah')AP.sch=r.nilai;if(r.kunci==='nama_app')AP.nm=r.nilai||'SMARTLIB';
-    if(r.kunci==='tagline')AP.tag=r.nilai;if(r.kunci==='logo_emoji')AP.em=r.nilai||'📚';
-    if(r.kunci==='logo_url')AP.logo=r.nilai||'';
     if(r.kunci==='denda_sehari')S.denda=parseFloat(r.nilai)||.20;
     if(r.kunci==='maks_hari')S.maks_hari=parseInt(r.nilai)||14;
     if(r.kunci==='maks_pinjam')S.maks_pinjam=parseInt(r.nilai)||3;
@@ -847,13 +844,13 @@ function updLwBdg(){
 // PENAMPILAN
 // ═══════════════════════════════════════════════
 function applyAP(){
-  const nm=AP.nm||'SMARTLIB',sch=AP.sch||'Pusat Sumber Sekolah';
-  document.title=nm+' — '+sch;
-  const logoSrc=AP.logo||DEFAULT_SMARTLIB_LOGO;
-  const setL=(e1,e2)=>{if(e1)e1.style.display='none';if(e2){e2.src=logoSrc;e2.style.display='block'}};
+  const nm=AP.nm||window.SMARTLIB_CONFIG.appName,sch=AP.sch||window.SMARTLIB_CONFIG.schoolName;
+  window.smartlibConfiguration.applyHead(AP);
+  const logoSrc=AP.logo||window.SMARTLIB_CONFIG.assets.schoolLogo||DEFAULT_SMARTLIB_LOGO;
+  const setL=(e1,e2,src=logoSrc)=>{if(e1)e1.style.display='none';if(e2){e2.src=src;e2.style.display='block'}};
   setL(document.getElementById('sb-em'),document.getElementById('sb-img'));
   setL(document.getElementById('tb-em'),document.getElementById('tb-im'));
-  setL(document.getElementById('l-em'),document.getElementById('l-img'));
+  setL(document.getElementById('l-em'),document.getElementById('l-img'),window.SMARTLIB_CONFIG.assets.smartlibLogo);
   const els={'sb-nm':nm,'sb-sch':sch,'sb-tag':AP.tag,'tb-sch':sch.length>16?sch.substring(0,16)+'...':sch,'l-nm':nm,'l-tag':AP.tag,'l-sch':sch!=='Pusat Sumber Sekolah'?sch:''};
   Object.entries(els).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.textContent=v});
 }
@@ -1051,7 +1048,7 @@ function pgDash(){
     <div class="wb-l">
       <div class="wb-gr">Selamat Datang</div>
       <div class="wb-nm">${_me?_me.nama.split(' ').slice(0,2).join(' '):'Admin'}! 👋</div>
-      <div class="wb-su">Sistem Automasi Pusat Sumber Sekolah</div>
+      <div class="wb-su">${escapeHtml(AP.resourceCentreName)}</div>
       <div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap">
         <span style="background:rgba(255,255,255,.13);color:#fff;font-size:9px;padding:2px 8px;border-radius:99px;font-weight:600">${B.length} Bahan</span>
         <span style="background:rgba(255,255,255,.13);color:#fff;font-size:9px;padding:2px 8px;border-radius:99px;font-weight:600">${M.length+G.length} Ahli</span>
@@ -1476,7 +1473,7 @@ function pgLabel(){
         <div class="ct">⚙️ Tetapan Label</div>
 
         <div class="fg"><label>Nama Sekolah / PSS pada Label</label>
-          <input id="lbl-sch" type="text" value="${AP.sch||AP.nm||'${escapeHtml(AP.sch)}'}" oninput="updPvLbl()">
+          <input id="lbl-sch" type="text" value="${escapeHtml(AP.sch||AP.nm)}" oninput="updPvLbl()">
         </div>
 
         <div class="fg"><label>Jenis Label</label>
@@ -1567,7 +1564,7 @@ function pgLabel(){
         <div>
           <div style="font-size:11.5px;font-weight:700;margin-bottom:7px">Contoh Label:</div>
           <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
-            ${[['Reading','372.4','JON'],['Animals','590','BUR'],['Malay Literature','899.23','SAM']].map(([l,l1,l2])=>`<div style="text-align:center"><div style="font-size:9.5px;color:var(--mu);margin-bottom:4px">${l}</div><div class="label-tulang" style="width:2.5cm;min-height:3.8cm;border:2px solid #333;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2mm;background:#fff;margin:0 auto"><div style="font-size:5pt;color:#000;font-weight:700;text-align:center">PSS SEKOLAH</div><div style="font-size:15pt;font-weight:900;color:#000;text-align:center;line-height:1">${l1}</div><div style="font-size:12pt;font-weight:700;color:#000;text-align:center;line-height:1">${l2}</div></div></div>`).join('')}
+            ${[['Reading','372.4','JON'],['Animals','590','BUR'],['Malay Literature','899.23','SAM']].map(([l,l1,l2])=>`<div style="text-align:center"><div style="font-size:9.5px;color:var(--mu);margin-bottom:4px">${l}</div><div class="label-tulang" style="width:2.5cm;min-height:3.8cm;border:2px solid #333;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2mm;background:#fff;margin:0 auto"><div style="font-size:5pt;color:#000;font-weight:700;text-align:center">${escapeHtml(AP.sch)}</div><div style="font-size:15pt;font-weight:900;color:#000;text-align:center;line-height:1">${l1}</div><div style="font-size:12pt;font-weight:700;color:#000;text-align:center;line-height:1">${l2}</div></div></div>`).join('')}
           </div>
         </div>
       </div>
@@ -2028,7 +2025,7 @@ function genKadPrintHTML(a,jenis,sch,sah,isPreview=false){
   const paparEmail=emailAhli&&bolehPaparEmailKad({...a,jenis_pengguna:jenis});
   const emailHtml=paparEmail?`<div class="kad-email">Email: ${escapeHtml(emailAhli)}</div>`:'';
   const logo=`<img src="${AP.logo||DEFAULT_SMARTLIB_LOGO}" alt="Logo SMARTLIB">`;
-  return `<div class="member-card-print${isPreview?' member-card-preview':''}"><div class="member-card-header"><div class="member-card-logo">${logo}</div><div class="member-card-system">${AP.nama||'SMARTLIB'}</div><div class="member-card-school">${sch||'Nama Sekolah'}</div></div><div class="member-card-body"><div class="member-card-type">${jenisLabel}</div><div class="member-card-name">${a.nama||'Nama Ahli'}</div><div class="member-card-meta"><div>ID: ${no}</div><div>No. Kad/Ahli: ${a.nokad||a.no_ahli||'–'}</div><div>${jenis==='murid'?'Kelas':'Jawatan'}: ${kelas||'–'}</div>${emailHtml}<div>Sah Hingga: ${sah||'–'}</div></div></div><div class="member-card-footer"><svg class="member-card-barcode" data-bc="${code}"></svg><div class="member-card-code">${code}</div><div class="member-card-copy">© 2026 SMARTLIB |Syahida Suffian</div></div></div>`;
+  return `<div class="member-card-print${isPreview?' member-card-preview':''}"><div class="member-card-header"><div class="member-card-logo">${logo}</div><div class="member-card-system">${AP.nama||'SMARTLIB'}</div><div class="member-card-school">${escapeHtml(sch||AP.sch)}</div></div><div class="member-card-body"><div class="member-card-type">${jenisLabel}</div><div class="member-card-name">${a.nama||'Nama Ahli'}</div><div class="member-card-meta"><div>ID: ${no}</div><div>No. Kad/Ahli: ${a.nokad||a.no_ahli||'–'}</div><div>${jenis==='murid'?'Kelas':'Jawatan'}: ${kelas||'–'}</div>${emailHtml}<div>Sah Hingga: ${sah||'–'}</div></div></div><div class="member-card-footer"><svg class="member-card-barcode" data-bc="${code}"></svg><div class="member-card-code">${code}</div><div class="member-card-copy">© 2026 SMARTLIB |Syahida Suffian</div></div></div>`;
 }
 function renderKadBarcodes(scope=document){
   setTimeout(()=>{scope.querySelectorAll('.member-card-barcode[data-bc]').forEach(svg=>{try{JsBarcode(svg,svg.getAttribute('data-bc'),{format:'CODE128',width:1.5,height:38,displayValue:false,margin:8,background:'#ffffff',lineColor:'#000000'})}catch(e){console.warn(e)}})},60);
@@ -2677,7 +2674,7 @@ function renderBorangArkib9(rows){
   return `<section class="borang-arkib-page">${renderHeaderBorangArkib9(rows.length)}${renderTableBorangArkib9(rows,1)}${renderFooterBorangArkib9()}</section>`;
 }
 function renderHeaderBorangArkib9(jumlahRekod){
-  return`<div class="arkib-header"><div style="text-align:center;font-size:12px">[Subperaturan 7(3)]</div><div style="text-align:center;font-weight:bold">Borang 9</div><div style="text-align:center">Arkib 9/08</div><h2 style="text-align:center;margin:10px 0 4px;font-size:15px">BORANG PERMOHONAN BAGI PELUPUSAN<br>REKOD TERBITAN DAN BAHAN BERCETAK</h2><div style="text-align:center;font-size:12px;margin-bottom:12px">(YANG TIDAK DINYATAKAN DALAM JADUAL PELUPUSAN REKOD)</div><table class="borang-info-table"><tr><td colspan="2"><strong>BUTIR-BUTIR JABATAN</strong></td><td style="width:35%"><strong>Untuk Kegunaan Arkib Negara</strong><br>Tarikh Terima: ___________________<br>Jumlah Rekod: ${jumlahRekod}<br>No. Penerimaan: _________________</td></tr><tr><td style="width:35%">(1) Kementerian/Jabatan/Agensi:</td><td colspan="2"><strong>${escapeHtml(AP.sch)}</strong></td></tr><tr><td>(2) Bahagian/Cawangan/Unit:</td><td colspan="2"><strong>PUSAT SUMBER SEKOLAH</strong></td></tr><tr><td>(3) Pewujud Rekod [Jika tidak sama dengan (1)]:</td><td colspan="2">PUSAT SUMBER SEKOLAH</td></tr><tr><td colspan="3"><strong>MAKLUMAT MENGENAI REKOD</strong></td></tr><tr><td>(4) Peringkat Keselamatan:</td><td colspan="2">TERBUKA</td></tr></table></div>`;
+  return`<div class="arkib-header"><div style="text-align:center;font-size:12px">[Subperaturan 7(3)]</div><div style="text-align:center;font-weight:bold">Borang 9</div><div style="text-align:center">Arkib 9/08</div><h2 style="text-align:center;margin:10px 0 4px;font-size:15px">BORANG PERMOHONAN BAGI PELUPUSAN<br>REKOD TERBITAN DAN BAHAN BERCETAK</h2><div style="text-align:center;font-size:12px;margin-bottom:12px">(YANG TIDAK DINYATAKAN DALAM JADUAL PELUPUSAN REKOD)</div><table class="borang-info-table"><tr><td colspan="2"><strong>BUTIR-BUTIR JABATAN</strong></td><td style="width:35%"><strong>Untuk Kegunaan Arkib Negara</strong><br>Tarikh Terima: ___________________<br>Jumlah Rekod: ${jumlahRekod}<br>No. Penerimaan: _________________</td></tr><tr><td style="width:35%">(1) Kementerian/Jabatan/Agensi:</td><td colspan="2"><strong>${escapeHtml(AP.sch)}</strong></td></tr><tr><td>(2) Bahagian/Cawangan/Unit:</td><td colspan="2"><strong>${escapeHtml(AP.resourceCentreName)}</strong></td></tr><tr><td>(3) Pewujud Rekod [Jika tidak sama dengan (1)]:</td><td colspan="2">${escapeHtml(AP.resourceCentreName)}</td></tr><tr><td colspan="3"><strong>MAKLUMAT MENGENAI REKOD</strong></td></tr><tr><td>(4) Peringkat Keselamatan:</td><td colspan="2">TERBUKA</td></tr></table></div>`;
 }
 function renderTableBorangArkib9(rows,startNo){
   return`<table class="borang-rekod-table"><colgroup><col style="width:6%"><col style="width:29%"><col style="width:16%"><col style="width:15%"><col style="width:17%"><col style="width:17%"></colgroup><thead><tr><th>BIL.<br>(5)</th><th>TAJUK<br>(6)</th><th>TAHUN/TARIKH<br>DITERBITKAN<br>(7)</th><th>METER PANJANG / JUMLAH<br>(8)</th><th>CADANGAN PELUPUSAN<br>(9)</th><th>CATATAN<br>(10)</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td style="text-align:center">${startNo+i}.</td><td>${escapeHtml(r.judul||'–')}</td><td style="text-align:center">${escapeHtml(r.tahun||'–')}</td><td style="text-align:center">1</td><td>${escapeHtml(r.cadangan_pelupusan||'-')}</td><td class="arkib-catatan"><div>No. Perolehan:</div><div>${escapeHtml(r.no_perolehan||'-')}</div><div>No. Panggilan:</div><div>${escapeHtml(r.no_panggilan||'-')}</div></td></tr>`).join('')}</tbody></table>`;
@@ -2907,9 +2904,9 @@ async function boot(){
     // Panggilan cepat dengan timeout 8 saat sahaja (tanpa retry)
     const controller=new AbortController();
     const t=setTimeout(()=>controller.abort(),8000);
-    const u=new URL(GAS_URL);
+    const u=new URL(GAS_URL||location.href);
     u.searchParams.set('action','baca_semua');
-    u.searchParams.set('token',CFG.token);
+    if(CFG.token)u.searchParams.set('token',CFG.token);
     const r=await smartlibBackendFetch(u.toString(),{signal:controller.signal});
     clearTimeout(t);
 
@@ -3048,9 +3045,9 @@ async function boot(){
     try{
       const ctrl=new AbortController();
       const t=setTimeout(()=>ctrl.abort(),4500);
-      const u=new URL(GAS);
+      const u=new URL(GAS||location.href);
       u.searchParams.set('action','bootstrap');
-      u.searchParams.set('token',CFG.token);
+      if(CFG.token)u.searchParams.set('token',CFG.token);
       const r=await smartlibBackendFetch(u.toString(),{signal:ctrl.signal});
       clearTimeout(t);
       if(r.ok){
@@ -3076,7 +3073,7 @@ document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});
 // Tujuan: baiki login Admin/Ahli/OPAC tanpa ubah UI asal.
 // ═════════════════════════════════════════════════════
 (function(){
-  window.CFG = window.CFG || { url: (typeof GAS !== 'undefined' ? GAS : ''), refresh: 30000 };
+  window.CFG = CFG; // Same compatibility object and endpoint source.
 
   window.api = async function(payload,retry=1){
     const body = {...payload};
@@ -3211,7 +3208,7 @@ document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});
     setTimeout(async()=>{
       try{
         const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),4500);
-        const u=new URL(GAS); u.searchParams.set('action','bootstrap');
+        const u=new URL(GAS||location.href); u.searchParams.set('action','bootstrap');
         const r=await smartlibBackendFetch(u.toString(),{signal:ctrl.signal}); clearTimeout(t);
         if(r.ok){ const j=await r.json(); if(j?.ok&&j.data){ prosesD(j.data); applyAP(); } }
       }catch(e){ console.warn('SMARTLIB bootstrap skipped:', e.message); }
@@ -4111,7 +4108,7 @@ document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});
   window.apiGet = async function(params,retry=1,key='get'){
     const p={...params};
     if(!PUBLIC_ACTIONS.has(p.action) && window._tok) p.sessionToken=window._tok;
-    const url=new URL(GAS);Object.entries(p).forEach(([k,v])=>{if(v!==undefined&&v!==null)url.searchParams.set(k,v)});
+    const url=new URL(GAS||location.href);Object.entries(p).forEach(([k,v])=>{if(v!==undefined&&v!==null)url.searchParams.set(k,v)});
     const ctrl=abortKey(key);
     const to=setTimeout(()=>ctrl.abort(),15000);
     try{
@@ -4318,7 +4315,7 @@ document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});
       <div class="wb-l">
         <div class="wb-gr">Selamat Datang</div>
         <div class="wb-nm">${_me?_me.nama.split(' ').slice(0,2).join(' '):'Admin'}! 👋</div>
-        <div class="wb-su">Sistem Automasi Pusat Sumber Sekolah</div>
+        <div class="wb-su">${escapeHtml(AP.resourceCentreName)}</div>
         <div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap">
           <span style="background:rgba(255,255,255,.13);color:#fff;font-size:9px;padding:2px 8px;border-radius:99px;font-weight:600">${Bcount.toLocaleString()} Bahan</span>
           <span style="background:rgba(255,255,255,.13);color:#fff;font-size:9px;padding:2px 8px;border-radius:99px;font-weight:600">${(M+G).toLocaleString()} Ahli</span>
@@ -4511,7 +4508,7 @@ document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});
 
   window.pgOpac=function(){
     const isPublic=window._mR==='opac';
-    $('content').innerHTML=`<div class="card" style="background:linear-gradient(135deg,var(--eml),var(--cyl));border:1.5px solid rgba(16,185,129,.3);margin-bottom:12px"><div style="text-align:center;padding:8px 0"><div style="font-size:20px;font-weight:800;background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:7px">${isPublic?'🔍 OPAC Awam SMARTLIB':'🔍 OPAC — Katalog Bahan Awam'}</div><div style="font-size:11px;color:var(--mu);margin-bottom:13px">Katalog Pusat Sumber Sekolah</div><div style="display:flex;gap:7px;max-width:520px;margin:0 auto;flex-wrap:wrap;justify-content:center"><input class="opac-in" id="opac-q" type="search" placeholder="Judul, pengarang, ISBN, kata kunci..." style="flex:1;min-width:200px" oninput="runOpac()"><button class="btn b-em" onclick="runOpac()">Cari</button></div><div class="opac-cats" style="justify-content:center;margin-top:8px"><span class="ocat on" onclick="togOCat(this,'')">Semua</span>${Object.entries(DDC).map(([k,v])=>`<span class="ocat" onclick="togOCat(this,'${k}')">${v}</span>`).join('')}</div></div></div><div id="opac-result" style="color:var(--mu);text-align:center;padding:24px">Taip untuk mencari...</div>`;
+    $('content').innerHTML=`<div class="card" style="background:linear-gradient(135deg,var(--eml),var(--cyl));border:1.5px solid rgba(16,185,129,.3);margin-bottom:12px"><div style="text-align:center;padding:8px 0"><div style="font-size:20px;font-weight:800;background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:7px">${isPublic?'🔍 OPAC Awam SMARTLIB':'🔍 OPAC — Katalog Bahan Awam'}</div><div style="font-size:11px;color:var(--mu);margin-bottom:13px">Katalog ${escapeHtml(AP.resourceCentreName)}</div><div style="display:flex;gap:7px;max-width:520px;margin:0 auto;flex-wrap:wrap;justify-content:center"><input class="opac-in" id="opac-q" type="search" placeholder="Judul, pengarang, ISBN, kata kunci..." style="flex:1;min-width:200px" oninput="runOpac()"><button class="btn b-em" onclick="runOpac()">Cari</button></div><div class="opac-cats" style="justify-content:center;margin-top:8px"><span class="ocat on" onclick="togOCat(this,'')">Semua</span>${Object.entries(DDC).map(([k,v])=>`<span class="ocat" onclick="togOCat(this,'${k}')">${v}</span>`).join('')}</div></div></div><div id="opac-result" style="color:var(--mu);text-align:center;padding:24px">Taip untuk mencari...</div>`;
   };
   window.runOpac=debounce(()=>loadOpac({page:1,q:($('opac-q')?.value||'').trim(),category:window._opacCF||''}),350);
   window.togOCat=function(el,k){document.querySelectorAll('.ocat').forEach(c=>c.classList.remove('on'));el.classList.add('on');window._opacCF=k;loadOpac({page:1,q:($('opac-q')?.value||'').trim(),category:k})};
@@ -4835,7 +4832,7 @@ document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});
         setInitialLoad(true,'Memuatkan data SMARTLIB...');
         await window.loadAllOnce(false);
         setInitialLoad(false);masuklah();
-      }catch(e){setInitialLoad(false);window._tok=_tok=null;window._me=_me=null;window._mR=_mR='';if(err){err.textContent=e.message.includes('kata laluan')?e.message:'Login berjaya tetapi data SMARTLIB gagal dimuatkan: '+e.message;err.style.display='block'}}
+      }catch(e){setInitialLoad(false);window._tok=_tok=null;window._me=_me=null;window._mR=_mR='';if(err){err.textContent=e.message;err.style.display='block'}}
       finally{if(btn){btn.disabled=false;btn.textContent='✨ Log Masuk'}}
       return;
     }
@@ -4865,7 +4862,7 @@ document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});
     const recent=active.slice().sort((a,b)=>String(b.tarikh_pinjam||'').localeCompare(String(a.tarikh_pinjam||''))).slice(0,5).map(enrichedLoan);
     const now=new Date(),month=now.toLocaleDateString('ms-MY',{month:'long',year:'numeric'});
     document.getElementById('content').innerHTML=`
-      <div class="wb"><div class="wb-l"><div class="wb-gr">Selamat Datang</div><div class="wb-nm">${_me?_me.nama.split(' ').slice(0,2).join(' '):'Admin'}! 👋</div><div class="wb-su">Sistem Automasi Pusat Sumber Sekolah</div><div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap"><span style="background:rgba(255,255,255,.13);color:#fff;font-size:9px;padding:2px 8px;border-radius:99px;font-weight:600"><span data-stock-active>${kiraStokBukuPSS().toLocaleString()}</span> Bahan</span><span style="background:rgba(255,255,255,.13);color:#fff;font-size:9px;padding:2px 8px;border-radius:99px;font-weight:600">${(students.length+teachers.length).toLocaleString()} Ahli</span>${overdue.length?`<span style="background:rgba(239,68,68,.28);color:#fff;font-size:9px;padding:2px 8px;border-radius:99px;font-weight:600">⚠️ ${overdue.length} Lewat</span>`:''}</div></div><div class="wb-r"><div class="wb-sn">${AP.sch||'Pusat Sumber Sekolah'}</div><div class="wb-ss">${now.toLocaleDateString('ms-MY',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div></div>
+      <div class="wb"><div class="wb-l"><div class="wb-gr">Selamat Datang</div><div class="wb-nm">${_me?_me.nama.split(' ').slice(0,2).join(' '):'Admin'}! 👋</div><div class="wb-su">${escapeHtml(AP.resourceCentreName)}</div><div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap"><span style="background:rgba(255,255,255,.13);color:#fff;font-size:9px;padding:2px 8px;border-radius:99px;font-weight:600"><span data-stock-active>${kiraStokBukuPSS().toLocaleString()}</span> Bahan</span><span style="background:rgba(255,255,255,.13);color:#fff;font-size:9px;padding:2px 8px;border-radius:99px;font-weight:600">${(students.length+teachers.length).toLocaleString()} Ahli</span>${overdue.length?`<span style="background:rgba(239,68,68,.28);color:#fff;font-size:9px;padding:2px 8px;border-radius:99px;font-weight:600">⚠️ ${overdue.length} Lewat</span>`:''}</div></div><div class="wb-r"><div class="wb-sn">${AP.sch||'Pusat Sumber Sekolah'}</div><div class="wb-ss">${now.toLocaleDateString('ms-MY',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div></div>
       <div class="sg"><div class="stat s-em"><div class="s-ic">📖</div><div class="s-lb">Jumlah Stok Aktif</div><div class="s-vl" data-stock-active>${kiraStokBukuPSS().toLocaleString()}</div><div class="s-sb" data-stock-summary>${ringkasanStokBukuPSS()}</div></div><div class="stat s-cy"><div class="s-ic">👥</div><div class="s-lb">Jumlah Ahli</div><div class="s-vl">${(students.length+teachers.length).toLocaleString()}</div><div class="s-sb">${students.length} murid · ${teachers.length} guru</div></div><div class="stat s-am"><div class="s-ic">🔄</div><div class="s-lb">Buku Dipinjam</div><div class="s-vl">${active.length}</div><div class="s-sb">Sedang dipinjam</div></div><div class="stat s-re"><div class="s-ic">⏰</div><div class="s-lb">Lewat Dipulangkan</div><div class="s-vl">${overdue.length}</div><div class="s-sb">${overdue.length?'Perlu tindakan!':'Semua OK ✅'}</div></div><div class="stat s-pu"><div class="s-ic">🔖</div><div class="s-lb">Tempahan Hari Ini</div><div class="s-vl">${todayBookings.length}</div><div class="s-sb">PSS / Ruang PSS</div></div></div>
       <div class="pnt-g">${[{ic:'📖',lb:'Perolehan',fn:"nav('perolehan')"},{ic:'📤',lb:'Pinjaman',fn:"nav('pinjam')"},{ic:'👥',lb:'Ahli',fn:"nav('murid')"},{ic:'🪪',lb:'Kad Ahli',fn:"nav('kad')"},{ic:'🔍',lb:'OPAC',fn:"nav('opac')"},{ic:'🏷️',lb:'Label',fn:"nav('label')"}].map(p=>`<div class="pnt" onclick="${p.fn}"><div class="pnt-ic">${p.ic}</div><div class="pnt-lb">${p.lb}</div></div>`).join('')}</div>
       <div style="display:grid;grid-template-columns:1.2fr 1fr .82fr;gap:12px;margin-bottom:12px"><div class="card"><div class="ct">📋 Aktiviti Terkini</div><div id="akt-body">${recent.length?recent.map(p=>`<div class="akt-it"><div class="akt-av" style="background:${avCol(p.pengguna.nama||'A')}">${ini(p.pengguna.nama||'A')}</div><div class="akt-in"><div class="akt-nm">${esc(p.pengguna.nama||'-')}</div><div class="akt-bk">${esc(p.buku.judul||'-')}</div></div><div class="akt-tm">${fmtD(p.tarikh_pinjam)}</div></div>`).join(''):'<div style="text-align:center;padding:18px;color:var(--mu)">Tiada aktiviti</div>'}</div><div style="text-align:center;margin-top:8px"><button class="btn b-gh b-sm" onclick="nav('pinjam')">Lihat semua →</button></div></div><div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div class="ct" style="margin:0">📢 Pengumuman</div><button class="btn b-gh b-xs" onclick="nav('admin')">+ Tambah</button></div>${(_ann||[]).map(a=>`<div class="ann-it ${a.w}"><div class="ann-ttl">${a.ttl}</div><div class="ann-sub">${a.sub}</div><div class="ann-dt">${a.t}</div></div>`).join('')}</div><div class="card"><div class="ct">📅 ${month}</div>${typeof buatKal==='function'?buatKal():''}</div></div>
@@ -4961,7 +4958,7 @@ document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});
   }
   window.pgOpac=function(){
     const isPublic=window._mR==='opac';
-    document.getElementById('content').innerHTML=`<div class="card" style="background:linear-gradient(135deg,var(--eml),var(--cyl));border:1.5px solid rgba(16,185,129,.3);margin-bottom:12px"><div style="text-align:center;padding:8px 0"><div style="font-size:20px;font-weight:800;background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:7px">${isPublic?'🔍 OPAC Awam SMARTLIB':'🔍 OPAC — Katalog Bahan Awam'}</div><div style="font-size:11px;color:var(--mu);margin-bottom:13px">Katalog Pusat Sumber Sekolah</div><div style="display:flex;gap:7px;max-width:520px;margin:0 auto;flex-wrap:wrap;justify-content:center"><input class="opac-in" id="opac-q" type="search" placeholder="Judul, pengarang, ISBN, kata kunci..." style="flex:1;min-width:200px" oninput="runOpac()"><button class="btn b-em" onclick="runOpac()">Cari</button></div><div class="opac-cats" style="justify-content:center;margin-top:8px"><span class="ocat on" onclick="togOCat(this,'')">Semua</span>${Object.entries(DDC).map(([k,v])=>`<span class="ocat" onclick="togOCat(this,'${k}')">${v}</span>`).join('')}</div></div></div><div id="opac-result" style="color:var(--mu);text-align:center;padding:24px">${isPublic?smallLoader('Memuat katalog OPAC...'):'Taip untuk mencari...'}</div>`;
+    document.getElementById('content').innerHTML=`<div class="card" style="background:linear-gradient(135deg,var(--eml),var(--cyl));border:1.5px solid rgba(16,185,129,.3);margin-bottom:12px"><div style="text-align:center;padding:8px 0"><div style="font-size:20px;font-weight:800;background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:7px">${isPublic?'🔍 OPAC Awam SMARTLIB':'🔍 OPAC — Katalog Bahan Awam'}</div><div style="font-size:11px;color:var(--mu);margin-bottom:13px">Katalog ${escapeHtml(AP.resourceCentreName)}</div><div style="display:flex;gap:7px;max-width:520px;margin:0 auto;flex-wrap:wrap;justify-content:center"><input class="opac-in" id="opac-q" type="search" placeholder="Judul, pengarang, ISBN, kata kunci..." style="flex:1;min-width:200px" oninput="runOpac()"><button class="btn b-em" onclick="runOpac()">Cari</button></div><div class="opac-cats" style="justify-content:center;margin-top:8px"><span class="ocat on" onclick="togOCat(this,'')">Semua</span>${Object.entries(DDC).map(([k,v])=>`<span class="ocat" onclick="togOCat(this,'${k}')">${v}</span>`).join('')}</div></div></div><div id="opac-result" style="color:var(--mu);text-align:center;padding:24px">${isPublic?smallLoader('Memuat katalog OPAC...'):'Taip untuk mencari...'}</div>`;
     if(isPublic)ensurePublicBooks().then(()=>{const d=document.getElementById('opac-result');if(d)d.textContent='Taip untuk mencari...'}).catch(e=>{const d=document.getElementById('opac-result');if(d)d.innerHTML=`<div class="al a-er">${esc(e.message)}</div>`});
   };
   window.runOpac=async function(){
@@ -5135,6 +5132,5 @@ document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});
   };
 })();
 </script>
-<script src="js/demo-entry.js"></script>
 </body>
 </html>

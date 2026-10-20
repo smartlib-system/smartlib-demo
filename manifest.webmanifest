@@ -1,7 +1,7 @@
 {
-  "name": "SMARTLib Demo",
+  "name": "SMARTLib Demo — SMARTLib Demo School",
   "short_name": "SMARTLib Demo",
-  "description": "Smart Management Automated Resources Tracking Library System",
+  "description": "Smart Management Automated Resources Tracking Library System — Demo Resource Centre",
   "id": "./",
   "start_url": "./",
   "scope": "./",
